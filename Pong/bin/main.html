@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	
+	<script src="jquery.js"></script>
+	<link rel="stylesheet" type="text/css" href="stylesheet.css">
+
+	
+
+</head>
+
+<body>
+	<audio id = "bgm" src = "audio\best.mp3" type = "audio/mpeg"> </audio>
+	<audio id = "victory" src = "audio\victory.mp3" type = "audio/mpeg"> </audio>
+	<audio id = "beep" src = "audio\beep.ogg" type = "audio/ogg"> </audio>
+	<audio id = "peep" src = "audio\peep.ogg" type = "audio/ogg"> </audio>
+
+	<div id = "window"></div>
+	<div id = "pip"></div>
+	<div id = "paddle"></div>
+	<div id = "centerline"></div>
+	<p id = "victory">Victory!</p>
+
+	<div id = "b1" class = "brick"></div>
+	<div id = "b2" class = "brick"></div>
+	<div id = "b3" class = "brick"></div>
+	<div id = "b4" class = "brick"></div>
+	<div id = "b5" class = "brick"></div>
+	<div id = "b6" class = "brick"></div>
+	<div id = "b7" class = "brick"></div>
+	<div id = "b8" class = "brick"></div>
+	<div id = "b9" class = "brick"></div>
+	<div id = "b10" class = "brick"></div>
+	<div id = "b11" class = "brick"></div>
+	<div id = "b12" class = "brick"></div>
+	<div id = "b13" class = "brick"></div>
+	<div id = "b14" class = "brick"></div>
+	<div id = "b15" class = "brick"></div>
+	<div id = "b16" class = "brick"></div>
+	<!--<button type = "button" id = "start">Start Game</button>
+	<button id = "restart">Restart Game</button>-->
+	<p> Controls: <br> W - Up &#160;&#160;&#160;F5 - Restart <br> S - Down </p>
+
+
+<script>
+	$(document).ready(function()
+	{
+			//audio statement
+			var victoryAudio = document.getElementById("victory");
+			var bgm = document.getElementById("bgm");
+			var peep = document.getElementById("peep");
+			var beep = document.getElementById("beep");
+			//jQuery Var Statement
+			var pipJQ = $("#pip");
+			var paddleJQ = $("#paddle");
+			var windowJQ = $("#window");
+			var startJQ = $("#start");
+			var restartJQ = $("restart");
+			var victoryJQ = $("#victory");
+			//window initialization
+			var win = new Object();
+			//window max dimensions
+			win.maxX = windowJQ.width();
+			win.maxY = windowJQ.height();
+
+			//pip initialization
+			var pip = new Object();
+			//pip position
+			pip.posX = pipJQ.offset().left;
+			pip.posY = pipJQ.offset().top;
+			//pip dimensions
+			pip.width = pipJQ.width();
+			pip.height = pipJQ.height();
+			//pip speed
+			pip.velX = 5;
+			pip.velY = 0;
+			//pip max position
+			pip.maxX = win.maxX - parseInt(pipJQ.css("width"));
+			pip.maxY = win.maxY - parseInt(pipJQ.css("height"));
+
+			//paddle initialization
+			var paddle = new Object();
+			//paddle position
+			paddle.posX = paddleJQ.offset().left;
+			paddle.posY = paddleJQ.offset().top;
+			//paddle dimensions
+			paddle.width = paddleJQ.width();
+			paddle.height = paddleJQ.height();
+			//paddle speed
+			paddle.velX = 0;
+			paddle.velY = 0;
+			//paddle max position
+			paddle.maxX = win.maxX - parseInt(paddleJQ.css("width"));
+			paddle.maxY = win.maxY - parseInt(paddleJQ.css("height"));
+
+			//brick object creation
+			function brick(JQid, JQclass)
+			{
+				this.posX = JQid.offset().left;
+				this.posY = JQid.offset().top;
+				this.width = JQclass.width();
+				this.height = JQclass.height();
+				this.velX = 0;
+				this.velY = 0;
+				this.colRunning = true;
+				this.collided = 1;
+			}
+			//brick creation
+			var brick1 = new brick($("#b1"),$(".brick"));
+			var brick2 = new brick($("#b2"),$(".brick"));
+			var brick3 = new brick($("#b3"),$(".brick"));
+			var brick4 = new brick($("#b4"),$(".brick"));
+			var brick5 = new brick($("#b5"),$(".brick"));
+			var brick6 = new brick($("#b6"),$(".brick"));
+			var brick7 = new brick($("#b7"),$(".brick"));
+			var brick8 = new brick($("#b8"),$(".brick"));
+			var brick9 = new brick($("#b9"),$(".brick"));
+			var brick10 = new brick($("#b10"),$(".brick"));
+			var brick11 = new brick($("#b11"),$(".brick"));
+			var brick12 = new brick($("#b12"),$(".brick"));
+			var brick13 = new brick($("#b13"),$(".brick"));
+			var brick14 = new brick($("#b14"),$(".brick"));
+			var brick15 = new brick($("#b15"),$(".brick"));
+			var brick16 = new brick($("#b16"),$(".brick"));
+
+			//frame rate
+			var refreshIntervalRate;
+		//Start Game
+		var refreshIntervalRate= setInterval(function(){gameLoop()},10);
+		//Edge Detection & Rebounder
+		function edgeCol(element,rebound)
+		{
+
+			if (element.posX >= element.maxX)
+			{
+				element.posX = element.maxX;
+				if (rebound === true)
+				{
+					element.velX = -element.velX;
+				}
+			}
+
+			else if (element.posX <= 0)
+			{
+				element.posX = 0;
+				if (rebound === true)
+				{
+					element.velX = -element.velX;
+				}
+			}
+
+			else if (element.posY >= element.maxY)
+			{
+				element.posY = element.maxY;
+				if (rebound === true)
+				{
+					element.velY = -element.velY;
+				}
+			}
+
+			else if (element.posY <= 0)
+			{
+				element.posY = 0;
+				if (rebound === true)
+				{
+					element.velY = -element.velY;
+				}
+			}
+		};
+
+
+		//Element collision X 
+		function collisionX(element1,element2,friction,brick,disableL,disableR)
+		{
+
+			//Element Rebound X
+			function reboundX(element1,element2,friction,brick)
+			{
+				//play beep
+				playAud(beep);
+				//rebound
+				element1.velX = -element1.velX;
+				element2.velX = -element2.velX;
+				//return collision state
+				element1.collisionX = true;
+				element2.collisionX = true;
+				//check if friction enabled
+				if (friction)
+				{
+					colFricX(element1,element2);
+				}
+			}
+			//Friction Simulation X
+			function colFricX(element1,element2)
+			{
+				if(element2.velY !== 0)
+				{
+					element1.velY = (element2.velY)/2;
+				}
+			}
+			//Element collision verification
+			function colVerifyX(element1,element2,friction,brick)
+			{
+				//collision verification element 2 top/bottom right to element 1 left side
+				if ((element1.posY <= element2.posY && element2.posY <= (element1.posY + element1.height)) || (element1.posY <= (element2.posY+element2.height) && (element2.posY+element2.height) <= (element1.posY + element1.height)))
+				{
+					reboundX(element1,element2,friction,brick);
+					//element1.posX = (element2.posX + element2.width);
+				}
+				//collision verification element 1 top/bottom right to element 2 left side
+				else if ((element2.posY <= element1.posY && element1.posY <= (element2.posY + element2.height)) || (element2.posY <= (element1.posY+element1.height) && (element1.posY+element1.height) <= (element2.posY + element2.height)))
+				{
+					reboundX(element1,element2,friction,brick);
+					//element2.posX = (element1.posX + element1.width);
+				}
+			}
+			//Verify elements are travelling towards each other
+			if(((element1.velX >= 0) && (element2.velX <= 0)) || ((element2.velX >= 0) && (element1.velX <= 0)))
+			{
+				//element2 right side collision with element1 left side
+				if((element2.posX + element2.width) === element1.posX)
+				{
+					if(disableL == false)
+					{
+						colVerifyX(element1,element2,friction,brick);
+					}
+				}
+				//element1 right side collision with element2 left side
+				if((element1.posX + element1.width) === element2.posX)
+				{
+					if(disableR == false)
+					{
+						colVerifyX(element1,element2,friction,brick);
+					}
+				}
+			}
+		};
+		//Element Collision Y
+		function collisionY(element1,element2,friction,brick)
+		{
+			
+			//Element Rebound Y
+			function reboundY(element1,element2,friction,brick)
+			{
+				//sound FX
+				playAud(peep);
+				//rebound
+				element1.velY = -element1.velY;
+				element2.velY = -element2.velY;
+				element1.collisionY = true;
+				element2.collisionY = true;
+				//check if friction enabled
+				if (friction)
+				{
+					colFricY(element1,element2);
+				}
+			}
+			//Friction Simulation Y
+			function colFricY(element1,element2)
+			{
+				element1.velX = (element2.velX)/2;
+			}
+			//Element collision verification
+			function colVerifyY(element1,element2,friction,brick)
+			{
+				//collision verification element 2 right/ left top to element 1 bottom side
+				if ((element1.posX <= element2.posX) && (element2.posX <= (element1.posX + element1.width)) || (element1.posX <= (element2.posX+element2.width) && (element2.posX+element2.width) <= (element1.posX + element1.width)))
+				{
+					reboundY(element1,element2,friction,brick);
+					//element2.posY = (element1.posY + element1.height);
+				}
+				//collision verification element 1 right/left top to element 2 bottom side
+				else if ((element2.posX <= element1.posX && element1.posX <= (element2.posX + element2.width)) || (element2.posX <= (element1.posX+element1.width) && (element1.posX+element1.width) <= (element2.posX + element2.width)))
+				{
+					reboundY(element1,element2,friction,brick);
+					//element1.posY = (element2.posY + element2.height);
+				}
+			}
+			//Verify elements are travelling towards each other
+			if(((element1.velY >= 0) && (element2.velY <= 0)) || ((element2.velY >= 0) && (element1.velY <= 0)))
+			{
+				//element1 bottom side collision with element2 top side
+				if(((element1.posY + element1.height) === element2.posY))
+				{
+					colVerifyY(element1,element2,friction,brick);
+				}
+				//element2 top side collision with element1 bottom side
+				if(((element2.posY + element2.height) === element1.posY))
+				{
+					colVerifyY(element1,element2,friction,brick);
+				}
+			}
+		};
+
+		//Combined Non-Frictional Collisions
+		function collision(element1,element2)
+		{
+			if (element2.colRunning === true)
+			{
+				collisionX(element1,element2,false,true,false,false);
+				collisionY(element1,element2,false,true,false,false);
+			}
+
+			else 
+			{
+				element2.collided = 0;
+			}
+		};
+
+
+		//horizontal control
+		function controlY(element)
+		{
+			//key press detection
+			document.addEventListener("keydown",function(event)
+			{
+				//w key detection
+				if (event.keyCode === 87)
+				{
+					element.velY = -10;
+				}
+				//s key detection
+				else if (event.keyCode === 83)
+				{
+					element.velY = 10;
+				}
+			});
+			//key release detection
+			document.addEventListener("keyup",function(event)
+			{
+				//w key detection
+				if (event.keyCode == 87)
+				{
+					element.velY = 0;
+				}
+				//s key detection
+				else if (event.keyCode == 83)
+				{
+					element.velY = 0;
+				}
+			});
+		};
+
+		//vertical control
+		function controlX(element)
+		{
+			//key press detection
+			document.addEventListener("keydown",function(event)
+			{
+				//a key detection
+				if (event.keyCode === 65)
+				{
+					element.velX = -10;
+				}
+				//d key detection
+				else if (event.keyCode === 68)
+				{
+					element.velX = 10;
+				}
+			});
+			//key release detection
+			document.addEventListener("keyup",function(event)
+			{
+				//a key detection
+				if (event.keyCode == 65)
+				{
+					element.velX = 0;
+				}
+				//d key detection
+				else if (event.keyCode == 68)
+				{
+					element.velX = 0;
+				}
+			});
+		};
+		
+		//position calculation
+		function positionCalculation(element)
+		{
+			element.posX += element.velX;
+			element.posY+= element.velY;
+		}
+
+		//position updater
+		function positionUpdater(elementJQ,element)
+		{
+			elementJQ.css("left",element.posX + element.velX);
+			elementJQ.css("top",element.posY+ element.velY);
+		}
+		//Hide bricks upon collision
+		function brickScore(element,elementJQ)
+		{
+			if(element.collisionX === true)
+			{
+				elementJQ.remove();
+				element.colRunning = false;
+			}
+
+			else if(element.collisionY === true)
+			{
+				elementJQ.remove();
+				element.colRunning = false;
+			}
+		}
+
+		//Audio player
+		function playAud(file)  
+		{
+ 			file.play();
+ 		}
+ 		//Victory or Defeat Conditions
+		function endGame(element)
+		{
+			//gamestate end if box exceeds x = 0
+			if(element.posX <= 0)
+			{
+				clearInterval(refreshIntervalRate);
+				alert("Game over!");
+			}
+			// gamestate ends if bricks hit exceeds 15
+			var total = brick1.collided + brick2.collided + brick3.collided + brick4.collided + brick5.collided + brick6.collided + brick7.collided + brick8.collided + brick9.collided + brick10.collided + brick11.collided + brick12.collided + brick13.collided + brick14.collided + brick15.collided + brick16.collided;
+			if (total === 0)
+			{
+				clearInterval(refreshIntervalRate);
+				alert("You win!");
+				playAud(victoryAudio);
+				bgm.pause();
+				pipJQ.remove();
+				paddleJQ.remove();
+				windowJQ.css("z-index","-4");
+			}
+		}
+		//Game State
+		function gameLoop()
+		{
+
+			playAud(bgm);
+			edgeCol(paddle,false);
+			edgeCol(pip,true);
+			collisionX(pip,paddle,true,false,false,true);
+			collisionY(pip,paddle,false,false,false,false);
+
+
+			collision(pip,brick1);
+			collision(pip,brick2);
+			collision(pip,brick3);
+			collision(pip,brick4);
+			collision(pip,brick5);
+			collision(pip,brick6);
+			collision(pip,brick7);
+			collision(pip,brick8);
+			collision(pip,brick9);
+			collision(pip,brick10);
+			collision(pip,brick11);
+			collision(pip,brick12);
+			collision(pip,brick13);
+			collision(pip,brick14);
+			collision(pip,brick15);
+			collision(pip,brick16);
+
+			brickScore(brick1,$("#b1"));
+			brickScore(brick2,$("#b2"));
+			brickScore(brick3,$("#b3"));
+			brickScore(brick4,$("#b4"));
+			brickScore(brick5,$("#b5"));
+			brickScore(brick6,$("#b6"));
+			brickScore(brick7,$("#b7"));
+			brickScore(brick8,$("#b8"));
+			brickScore(brick9,$("#b9"));
+			brickScore(brick10,$("#b10"));
+			brickScore(brick11,$("#b11"));
+			brickScore(brick12,$("#b12"));
+			brickScore(brick13,$("#b13"));
+			brickScore(brick14,$("#b14"));
+			brickScore(brick15,$("#b15"));
+			brickScore(brick16,$("#b16"));
+
+			positionCalculation(pip);
+			positionCalculation(paddle);
+			positionUpdater(pipJQ,pip);
+			positionUpdater(paddleJQ,paddle);
+
+			//controlX(paddle);
+			controlY(paddle);
+
+			endGame(pip);
+		};
+	});
+	</script>
+</body>
+
+</html>

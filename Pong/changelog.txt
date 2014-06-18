@@ -1,0 +1,40 @@
+##################
+PONG
+##################
+
+v0.5
+-------------------
+New in this version
+
+1. Bugfix - Unwanted collisions
+
+v0.4
+-------------------
+New in this version
+
+1. All new exciting backstory
+
+2. Victory conditions
+	a. Brick destruction counter implementation
+	b. Victory Audio
+		i. BGM disable upon victory
+		ii. Victory theme
+	c. Victory text
+
+v0.3
+-------------------
+New in this version
+
+1. Interactive bricks
+	a. Integrated two dimensional collisions
+
+2. Audio integration
+	a. BGM
+	b. Event triggered audio
+
+3. Cleaner paddle movement
+	a. Paddle no longer experiences flipped responses
+	b. Cannot exceed maximum regions
+
+4. Start page
+	a. File management housekeeping
